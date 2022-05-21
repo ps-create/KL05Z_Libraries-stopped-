@@ -5,6 +5,7 @@
 #include "EvTim.h"
 
 /*TO FIX (USE EXTERNAL CLOCK)*/
+/*ERROR AFTER OVERFLOW bc he counts down */
 void EvTim_ActivateUs(evTim_data_t *timeEvent_p, uint32_t delayUs)
 {
   timeEvent_p->timeStamp = SysTick->VAL + delayUs;
@@ -22,7 +23,7 @@ evTim_State_t EvTim_IsReady(evTim_data_t *timeEvent_p)
   {
     return_state = EVTIM_STOP;
   }
-  else if((int32_t)SysTick->VAL - (int32_t)timeEvent_p->timeStamp < 0)
+  else if( (timeEvent_p->timeStamp - SysTick->VAL) & (1 << 24))
   {
     return_state = EVTIM_IN_PROGRESS;
   }
