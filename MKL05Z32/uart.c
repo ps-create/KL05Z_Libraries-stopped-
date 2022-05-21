@@ -1,7 +1,4 @@
-/*-------------------------------------------------------------------------------------
-					autor: Pawel Smietana
-					version: 15.05.2022r.
-----------------------------------------------------------------------------*/
+ 
 
 #include "uart.h"
 
@@ -11,68 +8,59 @@ static uint8_t temp;
 
 void uart_init(uint32_t baud_rate)
 {
-		/* UART0 appended to the clock (UART0 Clock Gate Control) */
-    	SIM->SCGC4 |= SIM_SCGC4_UART0_MASK;  /* 010000000000 -> 1 on UART0 Clock Gate Contro (enable)*/
-		/* Port B appended to the clock (Port B Clock Gate Control) */
-    	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK;  /* 010000000000 -> 1 on Port B Clock Gate Control(enable)*/    
-		/* block the transmitter and receiver */
-		UART0->C2 &= ~(UART0_C2_TE_MASK | UART0_C2_RE_MASK); /* 11110011 -> disable transmitter and receiver */
-	
-		SIM->SOPT2 |= SIM_SOPT2_UART0SRC(MCGFLLCLK); 	
-		/* Alternative 1(GPIO) RX(PTB1) */
-		PORTB->PCR[1] &= ~PORT_PCR_MUX_MASK;
-		PORTB->PCR[1] = PORT_PCR_ISF_MASK|PORT_PCR_MUX(0x2);  /* 0001000000000000001000000000 -> 
-		1 on MUX 010(2)(Alternative 2 (chip-specific)) and on ISF(Configured interrupt is detected)*/
-		/* Alternative 1(GPIO) TX(PTB2) */
-		PORTB->PCR[2] &= ~PORT_PCR_MUX_MASK; 
-		PORTB->PCR[2] = PORT_PCR_ISF_MASK|PORT_PCR_MUX(0x2);  //0001000000000000001000000000    
-		
+  UART_ERROR_CODE_t error = UART_SUCCES;
+  /* UART0 appended to the clock (UART0 Clock Gate Control) */
+  SIM->SCGC4 |= SIM_SCGC4_UART0_MASK;
+  /* Port B appended to the clock (Port B Clock Gate Control) */
+  SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK;
+  /* block the transmitter and receiver */
+  UART0->C2 &= ~(UART0_C2_TE_MASK | UART0_C2_RE_MASK);
 
-		/* Baud rate calculation */
-		sbr = (uint16_t)((SystemCoreClock)/(baud_rate * (osr+1))); /* conversion of Baud rate from the formula: (BR = (UART0RC / ((OSR + 1) * SBR)) */
-		/*SBR Baud Rate Modulo Divisor.(UARTx_BHD REGISTER)
-		The 13 bits in SBR[12:0] are referred to collectively as BR, and they set the modulo divide rate for the
-		baud rate generator. When BR is 1 - 8191, the baud rate equals baud clock / ((OSR+1) * BR).*/
-		
-		/* Save off the current value of the uartx_BDH except for the SBR field */
-		temp = UART0->BDH & ~(UART0_BDH_SBR(0x1F)); /* 11100000 -> 1 on LBKDIE and RXEDGIE and SBNS ->
-		(LBKDIE)Hardware interrupts from UART _S2[LBKDIF] disabled (use polling).
-		(RXEDGIE)Hardware interrupts from UART _S2[RXEDGIF] disabled (use polling).
-		(SBNS)Set one stop bit.*/
-		
-		/* Set Baud rate */
-		UART0->BDH = temp | UART0_BDH_SBR(((sbr & 0x1F00)>> 8));
-    	UART0->BDL = (uint8_t)(sbr & UART0_BDL_SBR_MASK);
-		UART0->BDH &= ~UART0_BDH_SBNS_MASK;
-		UART0->C4 |= UART0_C4_OSR(osr);
-	
-		
-		UART0->C1 &= ~UART0_C1_M_MASK;
-		UART0->C1 &= ~UART0_C1_PE_MASK;
-	
-		/* enable the transmitter and receiver */
-    	UART0->C2 |= (UART0_C2_TE_MASK | UART0_C2_RE_MASK); /* 00001100 -> enable reciver and transmiter */        
-		
-		/* interrupts settings */
-		NVIC_EnableIRQ(UART0_IRQn);
-		NVIC_SetPriority(UART0_IRQn, 0); /* interrupts priority on 0 (HIGH)*/
-    	NVIC_ClearPendingIRQ(UART0_IRQn);
-}
+  SIM->SOPT2 |= SIM_SOPT2_UART0SRC(MCGFLLCLK);
+  /* Alternative 1(GPIO) RX(PTB1) */
+  PORTB->PCR[1] &= ~PORT_PCR_MUX_MASK;
+  PORTB->PCR[1] = PORT_PCR_ISF_MASK|PORT_PCR_MUX(0x2);
+  /* Alternative 1(GPIO) TX(PTB2) */
+  PORTB->PCR[2] &= ~PORT_PCR_MUX_MASK;
+  PORTB->PCR[2] = PORT_PCR_ISF_MASK|PORT_PCR_MUX(0x2);
 
-void uart_sendStr(char* str){
-	uint16_t i=0;
-	while(str[i] != 0){
-		while( !(UART0->S1&UART0_S1_TDRE_MASK) && !(UART0->S1&UART0_S1_TC_MASK));
-		UART0->D = str[i];
-		i++;
-	} 
+  /* Baud rate calculation */
+  sbr = (uint16_t)((SystemCoreClock)/(baud_rate * (osr+1)));
+
+  /* Save off the current value of the uartx_BDH except for the SBR field */
+  temp = UART0->BDH & ~(UART0_BDH_SBR(0x1F));
+
+  /* Set Baud rate */
+  UART0->BDH = temp | UART0_BDH_SBR(((sbr & 0x1F00)>> 8));
+  UART0->BDL = (uint8_t)(sbr & UART0_BDL_SBR_MASK);
+  UART0->BDH &= ~UART0_BDH_SBNS_MASK;
+  UART0->C4 |= UART0_C4_OSR(osr);
+
+  
+  UART0->C1 &= ~UART0_C1_M_MASK;
+  UART0->C1 &= ~UART0_C1_PE_MASK;
+
+  /* enable the transmitter and receiver */
+  UART0->C2 |= (UART0_C2_TE_MASK | UART0_C2_RE_MASK);
+
+  /* interrupts settings */
+  NVIC_EnableIRQ(UART0_IRQn);
+  NVIC_SetPriority(UART0_IRQn, 0);
+  NVIC_ClearPendingIRQ(UART0_IRQn);
 }
 
 void uart_sendCh(uint8_t data){
-	while(!(UART0->S1 & UART0_S1_TDRE_MASK) && !(UART0->S1&UART0_S1_TC_MASK));
-	UART0->D = data;
+  while(!(UART0->S1 & UART0_S1_TDRE_MASK) && !(UART0->S1&UART0_S1_TC_MASK));
+  UART0->D = data;
 }
 
+void uart_sendStr(char* str){
+  while(*str)
+  {
+    uart_sendCh(*str);
+    ++str;    
+  }
+} 
 
 void uart_getChar(uint8_t *data){
   while (!(UART0->S1 & UART0_S1_RDRF_MASK));

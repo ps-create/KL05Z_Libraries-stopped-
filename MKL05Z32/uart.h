@@ -2,7 +2,13 @@
 #define UART_H
 
 #include "MKL05Z4.h"
-#define MCGFLLCLK 				0x01
+#define MCGFLLCLK   0x01
+
+typedef enum
+{
+  UART_SUCCES = !0,
+  UART_FAILURE = 0
+} UART_ERROR_CODE_t;
 
 void uart_init(uint32_t baud_rate);
 
