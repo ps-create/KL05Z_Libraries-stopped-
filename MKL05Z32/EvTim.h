@@ -7,19 +7,21 @@
 #define EVTIM_H
 
 #include "MKL05Z4.h"
+#include "time.h"
 
 #define NULL 0
 
 typedef enum
 {
-	i2c_succes = !0,
-	i2c_failure = 0
+	evTim_succes = !0,
+	evTim_failure = 0
 } evTim_status;
 
 typedef struct
 {
   uint32_t timeStamp;
   evTim_status activate;
+	TPM_Type* tpmType;
 } evTim_data_t;
 
 typedef enum
@@ -30,7 +32,7 @@ typedef enum
   EVTIM_ERROR 
 } evTim_State_t;
 
-void EvTim_ActivateUs(evTim_data_t *timeEvent_p, uint32_t delayUs);
+void EvTim_ActivateUs(TPM_Type* tpmType,evTim_data_t *timeEvent_p, uint32_t delayUs);
 
 evTim_State_t EvTim_IsReady(evTim_data_t *timeEvent_p);
 

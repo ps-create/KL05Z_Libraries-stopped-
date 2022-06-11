@@ -1,5 +1,3 @@
- 
-
 #include "uart.h"
 
 static uint32_t osr = 15;
