@@ -14,27 +14,46 @@
 #define TPM_PWM_H 		TPM_CnSC_MSB_MASK|TPM_CnSC_ELSB_MASK
 #define TPM_PWM_L			TPM_CnSC_MSB_MASK|TPM_CnSC_ELSA_MASK
 
+#define RESET 0
+
 typedef enum
 {
-	tpm_divide1 = 0,
-	tpm_divide2 = 1,
-	tpm_divide4,
-  tpm_divide8,
-  tpm_divide16,
-  tpm_divide32,
-  tpm_divide64,
-  tpm_divide128
+	LPTPM_DISABLED = 0,
+	LPTPM_INCREMENTS,
+	LPTPM_INCREMENTS_WITH_RISING_EDGE,
+	LPTPM_RESERVED
+} tpm_cmod_t;
+
+
+typedef enum
+{
+	TPM_CLOCK_DISABLED = 0,
+	TPM_CLOCK_MCGFLLCLK,
+	TPM_CLOCK_OSCERCLK,
+	TPM_CLOCK_MCGIRCLK
+} tpm_tpmsrc_t;
+
+typedef enum  
+{
+	TPM_DIVIDE1 = 0,
+	TPM_DIVIDE2 = 1,
+	TPM_DIVIDE4,
+  TPM_DIVIDE8,
+  TPM_DIVIDE16,
+  TPM_DIVIDE32,
+  TPM_DIVIDE64,
+  TPM_DIVIDE128
 }tpm_prescaler_t;
 
 typedef enum
 {
-	tpm_pwm_channel_0 = 0,
-	tpm_pwm_channel_1,
-	tpm_pwm_channel_2,
-	tpm_pwm_channel_3,
-	tpm_pwm_channel_4,
-	tpm_pwm_channel_5,
-	tpm_pwm_channel_NC
+	TPM_PWM_CHANNEL_0 = 0,
+	TPM_PWM_CHANNEL_1,
+	TPM_PWM_CHANNEL_2,
+	TPM_PWM_CHANNEL_3,
+	TPM_PWM_CHANNEL_4,
+	TPM_PWM_CHANNEL_5,
+	TPM_PWM_CHANNEL_NC
 }tpm_pwm_channel_t;
 
 typedef enum
@@ -57,8 +76,11 @@ typedef enum
 	TPM_TOIE_ON
 }tpm_overflow_interrupt_t;
 
-tpm_status_t tpm_init(TPM_Type* tpmType, tpm_prescaler_t prescaler, uint16_t modulo, tpm_overflow_interrupt_t tpmOverflowInterruptStatus , tpm_counting_mod_t countingMod);
+tpm_status_t tpm_init(TPM_Type* tpmType, tpm_prescaler_t prescaler,tpm_tpmsrc_t  clk, uint16_t module,
+									tpm_overflow_interrupt_t tpmOverflowInterruptStatus , tpm_counting_mod_t countingMod);
 void tpm_timer_start(TPM_Type* tpmType);
 void tpm_timer_stop (TPM_Type* tpmType);
+void tpm_timer_reset(TPM_Type* tpmType);
+void tpm_cmod_change(TPM_Type* tpmType,tpm_cmod_t cmodChose);
 
 #endif /* TPM_H */

@@ -4,7 +4,8 @@
 ----------------------------------------------------------------------------*/
 #include "tpm.h"
 
-tpm_status_t tpm_init(TPM_Type* tpmType, tpm_prescaler_t prescaler, uint16_t modulo, tpm_overflow_interrupt_t tpmOverflowInterruptStatus , tpm_counting_mod_t countingMod)
+tpm_status_t tpm_init(TPM_Type* tpmType, tpm_prescaler_t prescaler,tpm_tpmsrc_t  clk, uint16_t module,
+																	tpm_overflow_interrupt_t tpmOverflowInterruptStatus , tpm_counting_mod_t countingMod)
 {
 	tpm_status_t status = tpm_not_ok;
 	
@@ -43,16 +44,17 @@ tpm_status_t tpm_init(TPM_Type* tpmType, tpm_prescaler_t prescaler, uint16_t mod
 	if(tpm_error != status)
 	{
 		status = tpm_ok;
-		SIM->SOPT2 |= SIM_SOPT2_TPMSRC(1);	
-		tpmType->CNT 	= TPM_CNT_COUNT(0);
-		tpmType->MOD = modulo;
+		SIM->SOPT2 |= SIM_SOPT2_TPMSRC(clk);	
+		tpmType->CNT 	= TPM_CNT_COUNT(RESET);
+		tpmType->MOD = module;
+		tpmType->SC |= TPM_SC_PS(prescaler);
 		if(TPM_TOIE_ON == tpmOverflowInterruptStatus)
 		{
-			tpmType->SC |= TPM_SC_TOIE_MASK | TPM_SC_PS(prescaler);	;
+			tpmType->SC |= TPM_SC_TOIE_MASK;
 		}
 		else
 		{
-			tpmType->SC |= TPM_SC_PS(prescaler);	
+			/* no action */
 		}
 	}
 	else
@@ -64,12 +66,24 @@ tpm_status_t tpm_init(TPM_Type* tpmType, tpm_prescaler_t prescaler, uint16_t mod
 
 void tpm_timer_start(TPM_Type* tpmType)
 {
-	tpmType->SC |= TPM_SC_CMOD(1);
+	tpmType->SC |= TPM_SC_CMOD(LPTPM_INCREMENTS);
 }
 
 void tpm_timer_stop(TPM_Type* tpmType)
 {
-	tpmType->SC |= TPM_SC_CMOD(0);
+	tpmType->SC |= TPM_SC_CMOD(LPTPM_DISABLED);
 }
+
+void tpm_timer_reset(TPM_Type* tpmType)
+{
+	tpmType->CNT 	= TPM_CNT_COUNT(RESET);
+}
+
+void tpm_cmod_change(TPM_Type* tpmType,tpm_cmod_t cmodChose)
+{
+	tpmType->SC |= TPM_SC_CMOD(cmodChose);
+}
+
+
 
 
